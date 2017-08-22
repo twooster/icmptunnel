@@ -41,7 +41,7 @@ int tun_alloc(char *dev, int flags)
     perror("Unable to open clone device\n");
     exit(EXIT_FAILURE);
   }
-  
+
   memset(&ifr, 0, sizeof(ifr));
 
   ifr.ifr_flags = flags;
@@ -103,11 +103,11 @@ int tun_write(int tun_fd, char *buffer, int length)
 /**
  * Function to configure the network
  */
-void configure_network(int server)
+void configure_network(int server, char *device)
 {
   int pid, status;
-  char path[100];
-  char *const args[] = {path, NULL};
+  char path[512];
+  char *const args[] = {path, device, NULL};
 
   if (server) {
     if (sizeof(SERVER_SCRIPT) > sizeof(path)){
@@ -130,7 +130,7 @@ void configure_network(int server)
     perror("Unable to fork\n");
     exit(EXIT_FAILURE);
   }
-  
+
   if (pid==0) {
     // Child process, run the script
     exit(execv(path, args));
@@ -153,14 +153,14 @@ void configure_network(int server)
 /**
  * Function to run the tunnel
  */
-void run_tunnel(char *dest, int server)
+void run_tunnel(char *device, char *dest, int server)
 {
   struct icmp_packet packet;
   int tun_fd, sock_fd;
 
   fd_set fs;
 
-  tun_fd = tun_alloc("tun0", IFF_TUN | IFF_NO_PI);
+  tun_fd = tun_alloc(device, IFF_TUN | IFF_NO_PI);
 
   printf("[DEBUG] Starting tunnel - Dest: %s, Server: %d\n", dest, server);
   printf("[DEBUG] Opening ICMP socket\n");
@@ -171,7 +171,7 @@ void run_tunnel(char *dest, int server)
     bind_icmp_socket(sock_fd);
   }
 
-  configure_network(server);
+  configure_network(server, device);
 
   while (1) {
     FD_ZERO(&fs);

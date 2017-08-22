@@ -14,23 +14,38 @@
 void usage()
 {
   printf("Wrong argument\n");
-  fprintf(stdout, "usage: icmptunnel [-s serverip] | [-c clientip]\n");
+  printf("usage: icmptunnel <-s serverip | -c clientip> [tun0]\n");
 }
 
 int main(int argc, char *argv[])
 {
   char ip_addr[100] = {0,};
-  if ((argc < 3) || ((strlen(argv[2]) + 1) > sizeof(ip_addr))) {
+  char device[32] = "tun0";
+
+  if (argc < 3) {
     usage();
     exit(EXIT_FAILURE);
   }
-  memcpy(ip_addr, argv[2], strlen(argv[2]) + 1);
 
-  if (strncmp(argv[1], ARG_SERVER_MODE, strlen(argv[1])) == 0) {
-    run_tunnel(ip_addr, 1);
+  if (strlen(argv[2]) >= sizeof(ip_addr)) {
+    usage();
+    exit(EXIT_FAILURE);
   }
-  else if (strncmp(argv[1], ARG_CLIENT_MODE, strlen(argv[1])) == 0) {
-    run_tunnel(ip_addr, 0);
+  strncpy(ip_addr, argv[2], sizeof(ip_addr));
+
+  if (argc > 3) {
+    if (strlen(argv[3]) >= sizeof(device)) {
+      usage();
+      exit(EXIT_FAILURE);
+    }
+    strncpy(device, argv[3], sizeof(device));
+  }
+
+  if (strcmp(argv[1], ARG_SERVER_MODE) == 0) {
+    run_tunnel(device, ip_addr, 1);
+  }
+  else if (strcmp(argv[1], ARG_CLIENT_MODE) == 0) {
+    run_tunnel(device, ip_addr, 0);
   }
   else {
     usage();
